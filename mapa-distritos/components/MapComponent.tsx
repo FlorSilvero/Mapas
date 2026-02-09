@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Polygon, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Polygon, Popup, Tooltip } from 'react-leaflet';
 import { FeatureGroup } from 'react-leaflet';
 import { EditControl } from 'react-leaflet-draw';
 import { District } from '@/types/district';
-import 'leaflet/dist/leaflet.css';
-import 'leaflet-draw/dist/leaflet.draw.css';
 
 // Fix para los iconos de Leaflet en Next.js
 import L from 'leaflet';
@@ -29,9 +27,11 @@ interface MapComponentProps {
 export default function MapComponent({ height = '600px' }: MapComponentProps) {
   const [districts, setDistricts] = useState<District[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // Cargar distritos al montar el componente
+  // Asegurar que el componente esté montado antes de renderizar el mapa
   useEffect(() => {
+    setIsMounted(true);
     loadDistricts();
   }, []);
 
@@ -99,7 +99,7 @@ export default function MapComponent({ height = '600px' }: MapComponentProps) {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || !isMounted) {
     return (
       <div className="flex items-center justify-center" style={{ height }}>
         <p>Cargando mapa...</p>
@@ -112,7 +112,9 @@ export default function MapComponent({ height = '600px' }: MapComponentProps) {
       <MapContainer
         center={[-34.6037, -58.3816]} // Buenos Aires, Argentina (puedes cambiar esto)
         zoom={12}
+        scrollWheelZoom={true}
         style={{ height: '100%', width: '100%' }}
+        preferCanvas={false}
       >
         {/* Capa de Tiles del mapa */}
         <TileLayer
@@ -150,6 +152,12 @@ export default function MapComponent({ height = '600px' }: MapComponentProps) {
               fillOpacity: 0.5,
             }}
           >
+            {/* Tooltip que aparece al pasar el mouse */}
+            <Tooltip permanent={false} direction="top">
+              {district.nombre}
+            </Tooltip>
+            
+            {/* Popup que aparece al hacer clic */}
             <Popup>
               <div>
                 <h3 className="font-bold">{district.nombre}</h3>
